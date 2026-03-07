@@ -3,6 +3,7 @@
 #include "display.h"
 #include "flash_utils.h"
 #include "sensors.h"
+#include "tests.h"
 
 UiState ui;
 
@@ -135,6 +136,63 @@ static void drawCpuPower(void) {
     display_drawPageIndicator(5, NUM_PAGES);
 }
 
+// Page 6: Flash Speed Test
+static void drawSpeedTest(void) {
+    display_drawHeader("Flash Speed Test");
+    tft.setCursor(0, 14);
+    display_printLabel("Test:  ", ST77XX_YELLOW);
+    tft.print("256KB seq. read");
+
+    tft.setCursor(0, 30);
+    display_printLabel("SPI:   ", ST77XX_GREEN);
+    if (ui.spiSpeedKBs > 0) tft.printf("%lu KB/s", ui.spiSpeedKBs);
+    else tft.print("--");
+
+    tft.setCursor(0, 40);
+    display_printLabel("QSPI:  ", ST77XX_MAGENTA);
+    if (ui.qspiSpeedKBs > 0) tft.printf("%lu KB/s", ui.qspiSpeedKBs);
+    else tft.print("--");
+
+    if (ui.spiSpeedKBs == 0 && ui.qspiSpeedKBs == 0)
+        display_drawHoldHint();
+
+    display_drawPageIndicator(6, NUM_PAGES);
+}
+
+// Page 7: Memory Test
+static void drawMemTest(void) {
+    display_drawHeader("Memory Test");
+
+    if (!ui.memTestRan) {
+        tft.setCursor(0, 14);
+        tft.setTextColor(ST77XX_WHITE);
+        tft.print("Tests SRAM1-4 with");
+        tft.setCursor(0, 24);
+        tft.print("0x55/0xAA/addr patterns");
+        tft.setCursor(0, 40);
+        display_printLabel("Total: ", ST77XX_YELLOW);
+        tft.print("352 KB");
+        display_drawHoldHint();
+    } else {
+        for (int i = 0; i < NUM_SRAM_REGIONS; i++) {
+            int y = 14 + i * 14;
+            tft.setCursor(0, y);
+            display_printLabel(sramRegions[i].name, ST77XX_YELLOW);
+            tft.printf(" %3luKB ", sramRegions[i].sizeKB);
+            if (ui.memTestPass[i]) {
+                tft.setTextColor(ST77XX_GREEN); tft.print("PASS");
+            } else {
+                tft.setTextColor(ST77XX_RED); tft.print("FAIL");
+            }
+        }
+        tft.setCursor(0, 70);
+        tft.setTextColor(ST77XX_BLUE);
+        tft.printf("%lu ms", ui.memTestTimeMs);
+    }
+
+    display_drawPageIndicator(7, NUM_PAGES);
+}
+
 void ui_drawPage(uint8_t page) {
     switch (page) {
         case 0: drawChipInfo(); break;
@@ -148,6 +206,24 @@ void ui_drawPage(uint8_t page) {
             ui.lastSensorUpdate = millis();
             break;
         case 4: drawCpuPower(); break;
+        case 5: drawSpeedTest(); break;
+        case 6: drawMemTest(); break;
+    }
+}
+
+bool ui_pageHasHoldAction(uint8_t page) {
+    return page == 1 || page == 2 || page == 5 || page == 6;
+}
+
+void ui_executeHoldAction(uint8_t page) {
+    switch (page) {
+        case 1: test_performSpiErase(ui.spiJedec, ui.spiFlashBuf, &ui.spiContent); break;
+        case 2: test_performQspiErase(ui.qspiJedec, ui.qspiFlashBuf, &ui.qspiContent); break;
+        case 5: test_performSpeedTest(&ui.spiSpeedKBs, &ui.qspiSpeedKBs); break;
+        case 6:
+            test_performMemTest(ui.memTestPass, &ui.memTestTimeMs);
+            ui.memTestRan = true;
+            break;
     }
 }
 

@@ -8,9 +8,14 @@
 #include "boot_anim.h"
 #include "ui_pages.h"
 
+#define HOLD_THRESHOLD_MS  500
+#define HOLD_ACTION_MS     5000
+
 static uint8_t currentView = 0;
 static bool lastBtnState = false;
 static uint32_t lastDebounce = 0;
+static uint32_t btnPressStart = 0;
+static bool holdActionActive = false;
 
 void setup() {
     pinMode(LED_PIN, OUTPUT);
@@ -43,12 +48,41 @@ void loop() {
     bool btnState = digitalRead(BTN_K1);
     uint32_t now = millis();
 
-    // Short press: next page
+    // Button press
     if (btnState && !lastBtnState && (now - lastDebounce > 50)) {
         lastDebounce = now;
-        currentView = (currentView + 1) % NUM_PAGES;
-        ui_drawPage(currentView);
+        btnPressStart = now;
+        holdActionActive = false;
     }
+
+    // Button release
+    if (!btnState && lastBtnState) {
+        uint32_t holdTime = now - btnPressStart;
+        if (holdActionActive) {
+            holdActionActive = false;
+            ui_drawPage(currentView);
+        } else if (holdTime < HOLD_THRESHOLD_MS) {
+            currentView = (currentView + 1) % NUM_PAGES;
+            ui_drawPage(currentView);
+        }
+    }
+
+    // Button held on actionable page
+    if (btnState && ui_pageHasHoldAction(currentView)) {
+        uint32_t holdTime = now - btnPressStart;
+
+        if (holdTime >= HOLD_THRESHOLD_MS && holdTime < HOLD_ACTION_MS) {
+            holdActionActive = true;
+            display_drawHoldCountdown(holdTime, HOLD_THRESHOLD_MS, HOLD_ACTION_MS);
+        }
+
+        if (holdTime >= HOLD_ACTION_MS && holdActionActive) {
+            holdActionActive = false;
+            ui_executeHoldAction(currentView);
+            ui_drawPage(currentView);
+        }
+    }
+
     lastBtnState = btnState;
 
     // Live sensor update

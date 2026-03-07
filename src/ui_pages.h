@@ -1,10 +1,9 @@
 #pragma once
 #include <stdint.h>
+#include "tests.h"
 
-#define NUM_PAGES       5
-#define FLASH_SAMPLE_SIZE 512
+#define NUM_PAGES       7
 
-// Shared state for UI pages
 struct UiState {
     uint8_t spiJedec[3];
     uint8_t qspiJedec[3];
@@ -14,9 +13,18 @@ struct UiState {
     const char *qspiContent;
     uint32_t cachedRSR;
     uint32_t lastSensorUpdate;
+    // Speed test results (0 = not run)
+    uint32_t spiSpeedKBs;
+    uint32_t qspiSpeedKBs;
+    // Memory test results
+    bool memTestRan;
+    bool memTestPass[NUM_SRAM_REGIONS];
+    uint32_t memTestTimeMs;
 };
 
 extern UiState ui;
 
 void ui_drawPage(uint8_t page);
 void ui_updateSensors(void);
+bool ui_pageHasHoldAction(uint8_t page);
+void ui_executeHoldAction(uint8_t page);
