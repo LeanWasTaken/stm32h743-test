@@ -215,7 +215,9 @@ static void drawUsbStorage(void) {
         tft.setCursor(0, 54);
         tft.setTextColor(ST77XX_YELLOW);
         tft.print("Serial disabled.");
-        display_drawHoldHint();
+        tft.setCursor(0, 72);
+        tft.setTextColor(ST77XX_BLUE);
+        tft.print("Hold K1 to stop");
     } else {
         tft.setCursor(0, 14);
         tft.setTextColor(ST77XX_WHITE);
