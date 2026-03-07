@@ -52,6 +52,34 @@ void spi_flash_read(uint32_t addr, uint8_t *buf, uint16_t len) {
     SPI_1.endTransaction();
 }
 
+void spi_flash_sectorErase4K(uint32_t addr) {
+    writeEnable();
+    SPI_1.beginTransaction(SPISettings(50000000, MSBFIRST, SPI_MODE0));
+    digitalWrite(FLASH_SPI_CS, LOW);
+    SPI_1.transfer(0x20);  // Sector Erase 4KB
+    SPI_1.transfer((addr >> 16) & 0xFF);
+    SPI_1.transfer((addr >> 8) & 0xFF);
+    SPI_1.transfer(addr & 0xFF);
+    digitalWrite(FLASH_SPI_CS, HIGH);
+    SPI_1.endTransaction();
+    waitReady();
+}
+
+void spi_flash_pageProgram(uint32_t addr, const uint8_t *buf, uint16_t len) {
+    if (len > 256) len = 256;
+    writeEnable();
+    SPI_1.beginTransaction(SPISettings(50000000, MSBFIRST, SPI_MODE0));
+    digitalWrite(FLASH_SPI_CS, LOW);
+    SPI_1.transfer(0x02);  // Page Program
+    SPI_1.transfer((addr >> 16) & 0xFF);
+    SPI_1.transfer((addr >> 8) & 0xFF);
+    SPI_1.transfer(addr & 0xFF);
+    for (uint16_t i = 0; i < len; i++) SPI_1.transfer(buf[i]);
+    digitalWrite(FLASH_SPI_CS, HIGH);
+    SPI_1.endTransaction();
+    waitReady();
+}
+
 void spi_flash_blockErase64K(uint32_t addr) {
     writeEnable();
     SPI_1.beginTransaction(SPISettings(50000000, MSBFIRST, SPI_MODE0));

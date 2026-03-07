@@ -4,6 +4,7 @@
 #include "flash_utils.h"
 #include "sensors.h"
 #include "tests.h"
+#include "usb_storage.h"
 
 UiState ui;
 
@@ -193,6 +194,47 @@ static void drawMemTest(void) {
     display_drawPageIndicator(7, NUM_PAGES);
 }
 
+// Page 8: USB Mass Storage
+static void drawUsbStorage(void) {
+    display_drawHeader("USB Mass Storage");
+
+    if (usb_storage_isActive()) {
+        tft.setCursor(0, 14);
+        tft.setTextColor(ST77XX_GREEN);
+        tft.print("MSC ACTIVE");
+
+        tft.setCursor(0, 28);
+        tft.setTextColor(ST77XX_WHITE);
+        tft.print("LUN0: SPI  ");
+        tft.printf("%luMB", flash_decodeCapacityKB(ui.spiJedec[2]) / 1024);
+
+        tft.setCursor(0, 38);
+        tft.print("LUN1: QSPI ");
+        tft.printf("%luMB", flash_decodeCapacityKB(ui.qspiJedec[2]) / 1024);
+
+        tft.setCursor(0, 54);
+        tft.setTextColor(ST77XX_YELLOW);
+        tft.print("Serial disabled.");
+        display_drawHoldHint();
+    } else {
+        tft.setCursor(0, 14);
+        tft.setTextColor(ST77XX_WHITE);
+        tft.print("Expose NOR flash as");
+        tft.setCursor(0, 24);
+        tft.print("USB removable drives.");
+
+        tft.setCursor(0, 40);
+        tft.setTextColor(ST77XX_RED);
+        tft.print("WARNING: This will");
+        tft.setCursor(0, 50);
+        tft.print("disable serial!");
+
+        display_drawHoldHint();
+    }
+
+    display_drawPageIndicator(8, NUM_PAGES);
+}
+
 void ui_drawPage(uint8_t page) {
     switch (page) {
         case 0: drawChipInfo(); break;
@@ -208,11 +250,12 @@ void ui_drawPage(uint8_t page) {
         case 4: drawCpuPower(); break;
         case 5: drawSpeedTest(); break;
         case 6: drawMemTest(); break;
+        case 7: drawUsbStorage(); break;
     }
 }
 
 bool ui_pageHasHoldAction(uint8_t page) {
-    return page == 1 || page == 2 || page == 5 || page == 6;
+    return page == 1 || page == 2 || page == 5 || page == 6 || page == 7;
 }
 
 void ui_executeHoldAction(uint8_t page) {
@@ -223,6 +266,10 @@ void ui_executeHoldAction(uint8_t page) {
         case 6:
             test_performMemTest(ui.memTestPass, &ui.memTestTimeMs);
             ui.memTestRan = true;
+            break;
+        case 7:
+            if (usb_storage_isActive()) usb_storage_disable();
+            else usb_storage_enable();
             break;
     }
 }

@@ -116,6 +116,34 @@ void qspi_flash_read(uint32_t addr, uint8_t *buf, uint16_t len) {
         HAL_QSPI_Receive(&hqspi, buf, HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
 }
 
+void qspi_flash_sectorErase4K(uint32_t addr) {
+    writeEnable();
+    QSPI_CommandTypeDef cmd = {};
+    cmd.InstructionMode = QSPI_INSTRUCTION_1_LINE;
+    cmd.Instruction = 0x20;  // Sector Erase 4KB
+    cmd.AddressMode = QSPI_ADDRESS_1_LINE;
+    cmd.AddressSize = QSPI_ADDRESS_24_BITS;
+    cmd.Address = addr;
+    HAL_QSPI_Command(&hqspi, &cmd, HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
+    waitReady();
+}
+
+void qspi_flash_pageProgram(uint32_t addr, const uint8_t *buf, uint16_t len) {
+    if (len > 256) len = 256;
+    writeEnable();
+    QSPI_CommandTypeDef cmd = {};
+    cmd.InstructionMode = QSPI_INSTRUCTION_1_LINE;
+    cmd.Instruction = 0x02;  // Page Program
+    cmd.AddressMode = QSPI_ADDRESS_1_LINE;
+    cmd.AddressSize = QSPI_ADDRESS_24_BITS;
+    cmd.Address = addr;
+    cmd.DataMode = QSPI_DATA_1_LINE;
+    cmd.NbData = len;
+    if (HAL_QSPI_Command(&hqspi, &cmd, HAL_QSPI_TIMEOUT_DEFAULT_VALUE) == HAL_OK)
+        HAL_QSPI_Transmit(&hqspi, (uint8_t *)buf, HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
+    waitReady();
+}
+
 void qspi_flash_blockErase64K(uint32_t addr) {
     writeEnable();
     QSPI_CommandTypeDef cmd = {};

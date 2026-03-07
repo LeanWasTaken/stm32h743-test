@@ -8,6 +8,7 @@
 #include "boot_anim.h"
 #include "ui_pages.h"
 #include "console.h"
+#include "usb_storage.h"
 
 #define HOLD_THRESHOLD_MS  500
 #define HOLD_ACTION_MS     5000
@@ -93,8 +94,9 @@ void loop() {
         ui_updateSensors();
     }
 
-    // Serial console
-    console_poll();
+    if (!usb_storage_isActive()) {
+        console_poll();
+    }
 
     delay(10);
 }

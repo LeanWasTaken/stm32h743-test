@@ -1,0 +1,10 @@
+{
+    "name": "usb_msc",
+    "version": "1.0.0",
+    "build": {
+        "flags": [
+            "-I../../.pio/packages/framework-arduinoststm32/system/Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
+            "-I../../.pio/packages/framework-arduinoststm32/libraries/USBDevice/inc"
+        ]
+    }
+}

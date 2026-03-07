@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include "tests.h"
 
-#define NUM_PAGES       7
+#define NUM_PAGES       8
 
 struct UiState {
     uint8_t spiJedec[3];
