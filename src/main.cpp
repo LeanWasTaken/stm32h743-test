@@ -5,6 +5,7 @@
 #include "qspi_flash.h"
 #include "flash_utils.h"
 #include "sensors.h"
+#include "boot_anim.h"
 
 #define FLASH_SAMPLE_SIZE 512
 
@@ -24,6 +25,7 @@ void setup() {
     RCC->RSR |= RCC_RSR_RMVF;
 
     display_init();
+    boot_animation();
 
     spi_flash_init();
     spi_flash_readJedec(spiJedec);
