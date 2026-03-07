@@ -7,6 +7,7 @@
 #include "sensors.h"
 #include "boot_anim.h"
 #include "ui_pages.h"
+#include "console.h"
 
 #define HOLD_THRESHOLD_MS  500
 #define HOLD_ACTION_MS     5000
@@ -39,6 +40,7 @@ void setup() {
     ui.qspiContent = flash_detectContent(ui.qspiFlashBuf, FLASH_SAMPLE_SIZE);
 
     sensors_init();
+    console_init();
 
     ui_drawPage(currentView);
     digitalWrite(LED_PIN, LOW);
@@ -90,6 +92,9 @@ void loop() {
         ui.lastSensorUpdate = now;
         ui_updateSensors();
     }
+
+    // Serial console
+    console_poll();
 
     delay(10);
 }
